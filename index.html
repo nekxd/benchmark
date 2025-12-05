@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мощный 2D бенчмарк</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e6e6e6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00dbde, #fc00ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            opacity: 0.8;
+        }
+        
+        .stats-container {
+            background-color: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .stat-box {
+            background: rgba(30, 30, 60, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        
+        .stat-box:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-label {
+            font-size: 1rem;
+            color: #a0a0ff;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        
+        .fps-display {
+            font-size: 3.5rem;
+            text-align: center;
+            margin: 15px 0;
+            text-shadow: 0 0 20px rgba(0, 219, 222, 0.7);
+            color: #00dbde;
+            font-weight: bold;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            height: 600px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            margin-bottom: 25px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #benchmarkCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background-color: #0a0a1a;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 160px;
+        }
+        
+        #startBtn {
+            background: linear-gradient(90deg, #00b09b, #96c93d);
+            color: white;
+        }
+        
+        #startBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 176, 155, 0.4);
+        }
+        
+        #stopBtn {
+            background: linear-gradient(90deg, #ff416c, #ff4b2b);
+            color: white;
+        }
+        
+        #stopBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 65, 108, 0.4);
+        }
+        
+        #resetBtn {
+            background: linear-gradient(90deg, #8a2be2, #4a00e0);
+            color: white;
+        }
+        
+        #resetBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+        }
+        
+        .results {
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            padding: 25px;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 20px;
+            display: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .results h2 {
+            color: #ffcc00;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            text-align: center;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .result-item {
+            background: rgba(40, 40, 80, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #00dbde;
+        }
+        
+        .result-label {
+            font-size: 1rem;
+            color: #a0a0ff;
+            margin-bottom: 5px;
+        }
+        
+        .result-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        
+        .timer {
+            font-size: 1.3rem;
+            text-align: center;
+            margin-top: 10px;
+            color: #ffcc00;
+            font-weight: bold;
+        }
+        
+        .instructions {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            max-width: 800px;
+            text-align: center;
+        }
+        
+        .instructions h3 {
+            color: #00dbde;
+            margin-bottom: 10px;
+        }
+        
+        .vsync-info {
+            color: #ff9966;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00b09b, #96c93d);
+            border-radius: 5px;
+            transition: width 0.5s;
+        }
+        
+        @media (max-width: 768px) {
+            .canvas-container {
+                height: 400px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .fps-display {
+                font-size: 2.5rem;
+            }
+            
+            .stat-value {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Мощный 2D бенчмарк</h1>
+        <div class="subtitle">Тестирование производительности графики с вертикальной синхронизацией (VSync)</div>
+    </header>
+    
+    <div class="stats-container">
+        <div class="fps-display" id="fpsDisplay">0 FPS</div>
+        
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="stat-label">Макс. FPS (VSync)</div>
+                <div class="stat-value" id="maxFps">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Мин. FPS</div>
+                <div class="stat-value" id="minFps">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Средний FPS</div>
+                <div class="stat-value" id="avgFps">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Объектов на экране</div>
+                <div class="stat-value" id="objectCount">0</div>
+            </div>
+        </div>
+        
+        <div class="timer" id="timer">Время: 0:00 / 3:00</div>
+        <div class="progress-bar">
+            <div class="progress" id="progressBar"></div>
+        </div>
+    </div>
+    
+    <div class="canvas-container">
+        <canvas id="benchmarkCanvas"></canvas>
+    </div>
+    
+    <div class="controls">
+        <button id="startBtn">Запустить тест</button>
+        <button id="stopBtn">Остановить</button>
+        <button id="resetBtn">Сбросить</button>
+    </div>
+    
+    <div class="instructions">
+        <h3>Инструкция</h3>
+        <p>Тест автоматически остановится через 3 минуты и покажет детальную статистику производительности.</p>
+        <p class="vsync-info">Активна вертикальная синхронизация (VSync) - максимальный FPS ограничен частотой обновления монитора.</p>
+    </div>
+    
+    <div class="results" id="results">
+        <h2>Результаты тестирования</h2>
+        <div class="results-grid" id="resultsGrid">
+            <!-- Результаты будут добавлены динамически -->
+        </div>
+    </div>
+
+    <script>
+        // Элементы DOM
+        const canvas = document.getElementById('benchmarkCanvas');
+        const ctx = canvas.getContext('2d');
+        const fpsDisplay = document.getElementById('fpsDisplay');
+        const maxFpsElement = document.getElementById('maxFps');
+        const minFpsElement = document.getElementById('minFps');
+        const avgFpsElement = document.getElementById('avgFps');
+        const objectCountElement = document.getElementById('objectCount');
+        const timerElement = document.getElementById('timer');
+        const progressBar = document.getElementById('progressBar');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const resultsElement = document.getElementById('results');
+        const resultsGrid = document.getElementById('resultsGrid');
+        
+        // Настройки бенчмарка
+        const TEST_DURATION = 180; // 3 минуты в секундах
+        const VSYNC_ENABLED = true; // Вертикальная синхронизация
+        const MAX_OBJECTS = 2000; // Максимальное количество объектов
+        const OBJECT_INCREMENT = 10; // Увеличение количества объектов каждые 10 секунд
+        
+        // Переменные состояния
+        let animationId = null;
+        let testRunning = false;
+        let testStartTime = 0;
+        let currentTime = 0;
+        let lastFrameTime = 0;
+        let frameCount = 0;
+        let fps = 0;
+        let fpsHistory = [];
+        let objectCount = 500;
+        let testResults = {};
+        
+        // Настройка канваса
+        function resizeCanvas() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Класс для объектов в тесте
+        class TestObject {
+            constructor(x, y, size, speedX, speedY, color) {
+                this.x = x;
+                this.y = y;
+                this.size = size;
+                this.speedX = speedX;
+                this.speedY = speedY;
+                this.color = color;
+                this.originalColor = color;
+                this.pulse = 0;
+                this.pulseSpeed = Math.random() * 0.05 + 0.02;
+            }
+            
+            update() {
+                // Движение объекта
+                this.x += this.speedX;
+                this.y += this.speedY;
+                
+                // Отскок от границ
+                if (this.x < this.size || this.x > canvas.width - this.size) {
+                    this.speedX = -this.speedX;
+                }
+                if (this.y < this.size || this.y > canvas.height - this.size) {
+                    this.speedY = -this.speedY;
+                }
+                
+                // Пульсация цвета
+                this.pulse += this.pulseSpeed;
+                const pulseValue = Math.sin(this.pulse) * 0.3 + 0.7;
+                
+                // Изменение цвета с пульсацией
+                const colorValues = this.originalColor.match(/\d+/g);
+                const r = Math.min(255, Math.floor(colorValues[0] * pulseValue));
+                const g = Math.min(255, Math.floor(colorValues[1] * pulseValue));
+                const b = Math.min(255, Math.floor(colorValues[2] * pulseValue));
+                
+                this.color = `rgb(${r}, ${g}, ${b})`;
+            }
+            
+            draw() {
+                // Рисование объекта с градиентом
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.size
+                );
+                gradient.addColorStop(0, this.color);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Контур
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+        
+        // Создание массива объектов
+        let objects = [];
+        
+        function createObjects(count) {
+            objects = [];
+            for (let i = 0; i < count; i++) {
+                const size = Math.random() * 15 + 5;
+                const x = Math.random() * (canvas.width - size * 2) + size;
+                const y = Math.random() * (canvas.height - size * 2) + size;
+                const speedX = (Math.random() - 0.5) * 4;
+                const speedY = (Math.random() - 0.5) * 4;
+                
+                // Яркие цвета для лучшей визуализации
+                const r = Math.floor(Math.random() * 155 + 100);
+                const g = Math.floor(Math.random() * 155 + 100);
+                const b = Math.floor(Math.random() * 155 + 100);
+                const color = `rgb(${r}, ${g}, ${b})`;
+                
+                objects.push(new TestObject(x, y, size, speedX, speedY, color));
+            }
+        }
+        
+        // Обновление FPS
+        function updateFPS(timestamp) {
+            if (lastFrameTime === 0) lastFrameTime = timestamp;
+            
+            // Вычисляем FPS с учетом вертикальной синхронизации
+            const deltaTime = timestamp - lastFrameTime;
+            if (deltaTime > 0) {
+                fps = VSYNC_ENABLED ? Math.min(60, 1000 / deltaTime) : 1000 / deltaTime;
+            }
+            
+            // Ограничение FPS для реалистичности VSync
+            if (VSYNC_ENABLED && fps > 60) {
+                fps = 60;
+            }
+            
+            lastFrameTime = timestamp;
+            frameCount++;
+            
+            // Сохраняем историю FPS
+            fpsHistory.push(fps);
+            
+            // Обновляем отображение FPS
+            fpsDisplay.textContent = `${Math.round(fps)} FPS`;
+            
+            // Обновляем статистику FPS
+            if (fpsHistory.length > 0) {
+                const maxFps = Math.max(...fpsHistory);
+                const minFps = Math.min(...fpsHistory);
+                const avgFps = fpsHistory.reduce((a, b) => a + b, 0) / fpsHistory.length;
+                
+                maxFpsElement.textContent = Math.round(maxFps);
+                minFpsElement.textContent = Math.round(minFps);
+                avgFpsElement.textContent = Math.round(avgFps);
+            }
+            
+            // Обновляем количество объектов
+            objectCountElement.textContent = objectCount;
+        }
+        
+        // Обновление таймера теста
+        function updateTimer() {
+            const elapsedSeconds = Math.floor((currentTime - testStartTime) / 1000);
+            const remainingSeconds = Math.max(0, TEST_DURATION - elapsedSeconds);
+            
+            const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+            const elapsedSecondsRemainder = elapsedSeconds % 60;
+            
+            const remainingMinutes = Math.floor(remainingSeconds / 60);
+            const remainingSecondsRemainder = remainingSeconds % 60;
+            
+            timerElement.textContent = `Время: ${elapsedMinutes}:${elapsedSecondsRemainder.toString().padStart(2, '0')} / 3:00`;
+            
+            // Обновление прогресс-бара
+            const progressPercent = (elapsedSeconds / TEST_DURATION) * 100;
+            progressBar.style.width = `${Math.min(100, progressPercent)}%`;
+            
+            // Увеличение количества объектов каждые 10 секунд
+            if (elapsedSeconds > 0 && elapsedSeconds % 10 === 0) {
+                if (objectCount < MAX_OBJECTS) {
+                    objectCount += OBJECT_INCREMENT;
+                    createObjects(objectCount);
+                }
+            }
+            
+            // Автоматическое завершение теста через 3 минуты
+            if (elapsedSeconds >= TEST_DURATION) {
+                stopTest();
+                showResults();
+            }
+        }
+        
+        // Основной цикл анимации
+        function animate(timestamp) {
+            if (!testRunning) return;
+            
+            currentTime = timestamp;
+            
+            // Обновляем FPS
+            updateFPS(timestamp);
+            
+            // Обновляем таймер
+            updateTimer();
+            
+            // Очищаем канвас
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Рисуем фон
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, '#0a0a1a');
+            gradient.addColorStop(1, '#1a1a2e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Обновляем и рисуем объекты
+            for (const obj of objects) {
+                obj.update();
+                obj.draw();
+            }
+            
+            // Рисуем сетку
+            drawGrid();
+            
+            // Запрашиваем следующий кадр
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // Рисование сетки на фоне
+        function drawGrid() {
+            const gridSize = 50;
+            ctx.strokeStyle = 'rgba(100, 100, 150, 0.1)';
+            ctx.lineWidth = 1;
+            
+            // Вертикальные линии
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            
+            // Горизонтальные линии
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+        
+        // Запуск теста
+        function startTest() {
+            if (testRunning) return;
+            
+            testRunning = true;
+            testStartTime = performance.now();
+            lastFrameTime = 0;
+            frameCount = 0;
+            fpsHistory = [];
+            objectCount = 500;
+            
+            createObjects(objectCount);
+            
+            // Сбрасываем прогресс-бар
+            progressBar.style.width = '0%';
+            
+            // Скрываем результаты предыдущего теста
+            resultsElement.style.display = 'none';
+            
+            // Запускаем анимацию
+            animationId = requestAnimationFrame(animate);
+            
+            // Обновляем состояние кнопок
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+        }
+        
+        // Остановка теста
+        function stopTest() {
+            testRunning = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            
+            // Обновляем состояние кнопок
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+        
+        // Сброс теста
+        function resetTest() {
+            stopTest();
+            
+            // Сбрасываем статистику
+            fpsDisplay.textContent = '0 FPS';
+            maxFpsElement.textContent = '0';
+            minFpsElement.textContent = '0';
+            avgFpsElement.textContent = '0';
+            objectCountElement.textContent = '0';
+            timerElement.textContent = 'Время: 0:00 / 3:00';
+            progressBar.style.width = '0%';
+            
+            // Очищаем канвас
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Скрываем результаты
+            resultsElement.style.display = 'none';
+            
+            // Сбрасываем состояние кнопок
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+        
+        // Показать результаты теста
+        function showResults() {
+            // Рассчитываем статистику
+            const maxFps = Math.max(...fpsHistory);
+            const minFps = Math.min(...fpsHistory);
+            const avgFps = fpsHistory.reduce((a, b) => a + b, 0) / fpsHistory.length;
+            
+            // Процентили FPS
+            const sortedFps = [...fpsHistory].sort((a, b) => a - b);
+            const percentile1 = sortedFps[Math.floor(sortedFps.length * 0.01)];
+            const percentile5 = sortedFps[Math.floor(sortedFps.length * 0.05)];
+            
+            // Сохраняем результаты
+            testResults = {
+                maxFps: Math.round(maxFps),
+                minFps: Math.round(minFps),
+                avgFps: Math.round(avgFps),
+                percentile1: Math.round(percentile1),
+                percentile5: Math.round(percentile5),
+                totalFrames: frameCount,
+                testDuration: TEST_DURATION,
+                vsyncEnabled: VSYNC_ENABLED,
+                maxObjects: objectCount,
+                fpsStability: (avgFps / maxFps * 100).toFixed(1)
+            };
+            
+            // Генерируем HTML для результатов
+            resultsGrid.innerHTML = `
+                <div class="result-item">
+                    <div class="result-label">Средний FPS</div>
+                    <div class="result-value">${testResults.avgFps}</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Максимальный FPS</div>
+                    <div class="result-value">${testResults.maxFps}</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Минимальный FPS</div>
+                    <div class="result-value">${testResults.minFps}</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">1% низкий FPS</div>
+                    <div class="result-value">${testResults.percentile1}</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">5% низкий FPS</div>
+                    <div class="result-value">${testResults.percentile5}</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Стабильность FPS</div>
+                    <div class="result-value">${testResults.fpsStability}%</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Всего кадров</div>
+                    <div class="result-value">${testResults.totalFrames}</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Макс. объектов</div>
+                    <div class="result-value">${testResults.maxObjects}</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Вертикальная синхронизация</div>
+                    <div class="result-value">${testResults.vsyncEnabled ? 'Включена' : 'Выключена'}</div>
+                </div>
+            `;
+            
+            // Показываем результаты
+            resultsElement.style.display = 'block';
+            
+            // Прокручиваем к результатам
+            resultsElement.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Обработчики событий для кнопок
+        startBtn.addEventListener('click', startTest);
+        stopBtn.addEventListener('click', stopTest);
+        resetBtn.addEventListener('click', resetTest);
+        
+        // Инициализация
+        stopBtn.disabled = true;
+        createObjects(100);
+        
+        // Начальная анимация фона
+        function initialAnimation() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Рисуем фон
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, '#0a0a1a');
+            gradient.addColorStop(1, '#1a1a2e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            drawGrid();
+            
+            // Рисуем приветственный текст
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = 'bold 40px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('2D БЕНЧМАРК', canvas.width / 2, canvas.height / 2 - 30);
+            
+            ctx.fillStyle = 'rgba(200, 200, 255, 0.8)';
+            ctx.font = '20px Arial';
+            ctx.fillText('Нажмите "Запустить тест" для начала', canvas.width / 2, canvas.height / 2 + 30);
+            
+            // Рисуем несколько объектов для демонстрации
+            for (let i = 0; i < 20; i++) {
+                const size = Math.random() * 20 + 10;
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const r = Math.floor(Math.random() * 155 + 100);
+                const g = Math.floor(Math.random() * 155 + 100);
+                const b = Math.floor(Math.random() * 155 + 100);
+                const color = `rgb(${r}, ${g}, ${b})`;
+                
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
+                gradient.addColorStop(0, color);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Запрашиваем следующий кадр для плавной анимации
+            if (!testRunning) {
+                requestAnimationFrame(initialAnimation);
+            }
+        }
+        
+        // Запускаем начальную анимацию
+        initialAnimation();
+        
+        // Добавляем информацию в консоль
+        console.log('Мощный 2D бенчмарк загружен!');
+        console.log('Настройки:');
+        console.log(`- Продолжительность теста: ${TEST_DURATION} секунд`);
+        console.log(`- Вертикальная синхронизация: ${VSYNC_ENABLED ? 'Включена' : 'Выключена'}`);
+        console.log(`- Максимальное количество объектов: ${MAX_OBJECTS}`);
+    </script>
+</body>
+</html>
